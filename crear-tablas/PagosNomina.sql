@@ -1,3 +1,4 @@
+-- Tabla de Pagos de Nómina
 CREATE TABLE PagosNomina (
     id_pago INT IDENTITY(1,1) PRIMARY KEY,
     id_empleado INT NOT NULL,

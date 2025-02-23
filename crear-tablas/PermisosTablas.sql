@@ -1,3 +1,4 @@
+-- Tabla de Permisos por Tabla
 CREATE TABLE PermisosTablas (
     id_permiso_tabla INT IDENTITY(1,1) PRIMARY KEY,
     id_rol INT NOT NULL,
