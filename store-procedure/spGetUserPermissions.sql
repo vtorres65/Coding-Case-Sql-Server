@@ -1,14 +1,3 @@
--- ================================================
--- Template generated from Template Explorer using:
--- Create Procedure (New Menu).SQL
---
--- Use the Specify Values for Template Parameters 
--- command (Ctrl-Shift-M) to fill in the parameter 
--- values below.
---
--- This block of comments will not be included in
--- the definition of the procedure.
--- ================================================
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -16,9 +5,9 @@ GO
 -- =============================================
 -- Author:		<Author,,José Mauricio Galeano Castrillón>
 -- Create date: <Create Date,,22/02/2025>
--- Description:	<Description,,Este procedimiento almacenado se utiliza para consultar los permisos de un usuario por tabla>
+-- Description:	<Description,,Este procedimiento almacenado se utiliza para consultar los permisos de un usuario por tabla y registro>
 -- =============================================
-CREATE PROCEDURE spGetUserPermissions
+ALTER PROCEDURE spGetUserPermissions
 	-- Add the parameters for the stored procedure here
 	@IdUser int, 
 	@TableName nvarchar(50)
@@ -34,64 +23,59 @@ BEGIN
 		
 		DECLARE @id_usuario INT, @id_registro INT;
 
-		-- Validar si la tabla existe en la base de datos
-		IF NOT EXISTS (
-            SELECT 1 FROM INFORMATION_SCHEMA.TABLES 
-            WHERE TABLE_NAME = @TableName AND TABLE_TYPE = 'BASE TABLE'
-        )
-        BEGIN
-            RAISERROR ('Error: La tabla especificada no existe en la base de datos.', 16, 1);
-            ROLLBACK TRANSACTION;
-            RETURN;
-        END;
+		IF EXISTS (SELECT * FROM PermisosRegistros PR INNER JOIN PermisosTablas PT ON PT.id_permiso_tabla = PR.id_permiso_tabla
+				   INNER JOIN UsuarioRol UR ON UR.id_rol = PR.id_rol 
+				   INNER JOIN Usuarios U ON U.id_usuario = UR.id_usuario
+				   WHERE U.id_usuario = @IdUser AND PT.nombre_tabla = @TableName) 
+		BEGIN
+			
+			INSERT INTO AuditoriaAccesos (id_usuario, accion, nombre_tabla, id_registro, fecha_hora)
+			SELECT @IdUser, 'SELECT', @TableName AS nombre_tabla, PR.id_registro, GETDATE() AS fecha_hora
+			FROM PermisosRegistros PR INNER JOIN PermisosTablas PT ON PT.id_permiso_tabla = PR.id_permiso_tabla
+			INNER JOIN UsuarioRol UR ON UR.id_rol = PR.id_rol 
+			INNER JOIN Usuarios U ON U.id_usuario = UR.id_usuario
+			WHERE U.id_usuario = @IdUser AND PT.nombre_tabla = @TableName;
 
-		-- Obtener los permisos del usuario sobre la tabla
-		DECLARE @permiso INT;
+			SELECT PT.nombre_tabla, (SELECT nombre_rol FROM Roles R WHERE R.id_rol = PR.id_rol) AS nombre_rol, PR.id_registro as registro, puede_ver, puede_editar, puede_eliminar
+			FROM PermisosRegistros PR INNER JOIN PermisosTablas PT ON PT.id_permiso_tabla = PR.id_permiso_tabla
+			INNER JOIN UsuarioRol UR ON UR.id_rol = PR.id_rol 
+			INNER JOIN Usuarios U ON U.id_usuario = UR.id_usuario
+			WHERE U.id_usuario = @IdUser AND PT.nombre_tabla = @TableName;
 
-        SELECT @permiso = 1
-        FROM PermisosTablas PT
-        INNER JOIN UsuarioRol UR ON UR.id_rol = PT.id_rol
-        INNER JOIN Usuarios U ON U.id_usuario = UR.id_usuario
-        WHERE U.id_usuario = @IdUser AND PT.nombre_tabla = @TableName;
+		END;
+		ELSE
+		BEGIN
 
-		-- Verificar si el usuario tiene permisos
-        IF @permiso IS NULL
-        BEGIN
-            RAISERROR ('Acceso denegado: No tienes permisos sobre esta tabla.', 16, 1);
-            ROLLBACK TRANSACTION;
-            RETURN;
-        END;
+			INSERT INTO AuditoriaAccesos (id_usuario, accion, nombre_tabla, id_registro, fecha_hora)
+			SELECT @IdUser, 'SELECT', @TableName AS nombre_tabla, NULL, GETDATE() AS fecha_hora
+			FROM PermisosRegistros PR INNER JOIN PermisosTablas PT ON PT.id_permiso_tabla = PR.id_permiso_tabla
+			INNER JOIN UsuarioRol UR ON UR.id_rol = PR.id_rol 
+			INNER JOIN Usuarios U ON U.id_usuario = UR.id_usuario
+			WHERE U.id_usuario = @IdUser AND PT.nombre_tabla = @TableName;
 
-		-- Registrar en auditoría si el usuario tiene permisos
-        INSERT INTO AuditoriaAccesos (id_usuario, accion, nombre_tabla, fecha_hora)
-        VALUES (@IdUser, 'SELECT', @TableName, GETDATE());
+			SELECT PT.nombre_tabla, (SELECT nombre_rol FROM Roles R WHERE R.id_rol = PT.id_rol) AS nombre_rol, puede_select, puede_insert, puede_update, puede_delete
+			FROM PermisosTablas PT INNER JOIN UsuarioRol UR ON UR.id_rol = PT.id_rol 
+			INNER JOIN Usuarios U ON U.id_usuario = UR.id_usuario
+			WHERE U.id_usuario = @IdUser AND PT.nombre_tabla = @TableName;
 
-		-- Devolver los permisos del usuario sobre la tabla
-        SELECT 
-            PT.nombre_tabla, R.nombre_rol, PT.puede_select, PT.puede_insert, PT.puede_update, PT.puede_delete
-        FROM PermisosTablas PT
-        INNER JOIN UsuarioRol UR ON UR.id_rol = PT.id_rol
-        INNER JOIN Usuarios U ON U.id_usuario = UR.id_usuario
-        INNER JOIN Roles R ON R.id_rol = PT.id_rol
-        WHERE U.id_usuario = @IdUser AND PT.nombre_tabla = @TableName;
+		END;
 
-		-- Si todo sale bien, hacer commit
-        COMMIT TRANSACTION;
-    END TRY
+	END TRY
 
-    BEGIN CATCH
-        -- Capturar errores y mostrar mensaje
-        SELECT 
-            ERROR_NUMBER() AS ErrorNumber,
-            ERROR_SEVERITY() AS ErrorSeverity,
-            ERROR_STATE() AS ErrorState,
-            ERROR_PROCEDURE() AS ErrorProcedure,
-            ERROR_LINE() AS ErrorLine,
-            ERROR_MESSAGE() AS ErrorMessage;
+	BEGIN CATCH
+		SELECT ERROR_NUMBER() AS ErrorNumber,
+			ERROR_SEVERITY() AS ErrorSeverity,
+			ERROR_STATE() AS ErrorState,
+			ERROR_PROCEDURE() AS ErrorProcedure,
+			ERROR_LINE() AS ErrorLine,
+			ERROR_MESSAGE() AS ErrorMessage;
 
-        -- Si hay un error, hacer rollback
-        IF @@TRANCOUNT > 0
-            ROLLBACK TRANSACTION;
-    END CATCH;
-END;
+		IF @@TRANCOUNT > 0
+			ROLLBACK TRANSACTION;
+	END CATCH;
+
+	IF @@TRANCOUNT > 0
+		COMMIT TRANSACTION;
+
+END
 GO
