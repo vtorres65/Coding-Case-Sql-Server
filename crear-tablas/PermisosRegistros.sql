@@ -1,3 +1,4 @@
+-- Tabla de Permisos por Registro
 CREATE TABLE PermisosRegistros (
     id_permiso_registro INT IDENTITY(1,1) PRIMARY KEY,
     id_rol INT NOT NULL,

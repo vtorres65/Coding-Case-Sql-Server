@@ -1,3 +1,4 @@
+-- Tabla de Relación Usuario - Rol
 CREATE TABLE UsuarioRol (
     id_usuario INT,
     id_rol INT,

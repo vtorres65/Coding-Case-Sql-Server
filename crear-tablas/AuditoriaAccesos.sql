@@ -1,3 +1,4 @@
+-- Tabla que registra las acciones realizadas por los usuarios 
 CREATE TABLE AuditoriaAccesos (
     id_auditoria INT IDENTITY(1,1) PRIMARY KEY,
     id_usuario INT NOT NULL,

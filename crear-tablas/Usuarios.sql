@@ -1,3 +1,4 @@
+-- Tabla de Usuarios
 CREATE TABLE Usuarios (
     id_usuario INT IDENTITY(1,1) PRIMARY KEY,
     nombre NVARCHAR(100) NOT NULL,
