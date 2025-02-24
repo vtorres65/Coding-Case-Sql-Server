@@ -14,7 +14,26 @@ class UserPermissionsByTableViewSet(APIView):
   def get(self, request, format=None):
 
       cursor = connection.cursor()
-      cursor.execute(call spGetUserPermissions())
+      args = [request.data.Id_Usuario, request.data.Nombre_Tabla]
+      cursor.callproc('spGetUserPermissions', args)
       results = cursor.fetchall()
       return Response(results)
   
+
+class AuditoriaAccesoViewSet(APIView):
+
+  def get(self, request, format=None):
+
+      cursor = connection.cursor()
+      cursor.callproc('v_AuditoriaAccesos')
+      results = cursor.fetchall()
+      return Response(results)
+
+class NominaViewSet(APIView):
+    
+     def get(self, request, format=None):
+
+      cursor = connection.cursor()
+      cursor.callproc('v_Nomina')
+      results = cursor.fetchall()
+      return Response(results)

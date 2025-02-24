@@ -48,3 +48,28 @@ class UserPermissionsByRegister(models.Model):
     class Meta:
         managed = False
         db_table = 'UserPermissionsByRegister'
+
+class AuditoriaAcceso(models.Model):
+    Id_Auditoria = models.AutoField(db_column='id_auditoria', primary_key=True)  # Field id_usuario made lowercase.
+    Id_Usuario = models.CharField(db_column='id_usuario')  # Field activo.    
+    Nombre_Usuario = models.CharField(db_column='nombre_usuario', max_length=100, db_collation='Modern_Spanish_CI_AS')  # Field nombre made lowercase.
+    Accion = models.CharField(db_column='accion', max_length=100, db_collation='Modern_Spanish_CI_AS')  # Field emaiil made lowercase.
+    Nombre_Tabla = models.CharField(db_column='nombre_tabla', max_length=100, db_collation='Modern_Spanish_CI_AS')  # Field nombre_tabla made lowercase.
+    Fecha_Hora = models.DateField(db_column='fecha_hora',auto_now_add=True)  # Field fecha_hora made lowercase.
+    
+    class Meta:
+        managed = False
+        db_table = 'Auditoria_Acceso'
+
+class Nomina(models.Model):
+    Id_Pago = models.AutoField(db_column='id_pago', primary_key=True)  # Field id_usuario made lowercase.
+    Id_Empleado = models.CharField(db_column='id_empleado')  # Field id_empleado.    
+    Nombre_Empleado = models.CharField(db_column='nombre_empleado', max_length=100, db_collation='Modern_Spanish_CI_AS')  # Field nombre_empleado made lowercase.
+    Departamento = models.CharField(db_column='departamento', max_length=100, db_collation='Modern_Spanish_CI_AS')  # Field departamento made lowercase.
+    Fecha_Pago = models.DateField(db_column='fecha_pago',auto_now_add=True)  # Field fecha_pago made lowercase.
+    Monto = models.DateField(db_column='monto',auto_now_add=True)  # Field monto
+
+    class Meta:
+        managed = False
+        db_table = 'Nomina'
+
